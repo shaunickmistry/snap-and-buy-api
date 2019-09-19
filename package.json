@@ -13,6 +13,13 @@
     "http-errors": "~1.6.3",
     "morgan": "~1.9.1",
     "pug": "2.0.0-beta11",
+    "querystring": "^0.2.0",
+    "reload": "^3.0.1",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4",
     "visearch-javascript-sdk": "^1.5.2"
+  },
+  "devDependencies": {
+    "express-reload": "^1.2.0"
   }
 }
