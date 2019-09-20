@@ -2,33 +2,38 @@ const express = require('express');
 const bodyParser = require("body-parser");
 const visearch = require('visearch-javascript-sdk');
 const rp = require('request-promise');
+const cors = require('cors');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/'});
 const router = express.Router();
+
+router.use(cors());
 
 /* Here we are configuring express to use body-parser as middle-ware. */
 router.use(bodyParser.urlencoded({ extended: false }));
 router.use(bodyParser.json());
 
-// Set up keys
+/* Set up keys */
 visearch.set('app_key', '890640f4b381cbcb3b5cafb0b179c097');
 
 /* Test for individual image with Visense API. */
-router.get('/image-search', function(req, response, next) {
-  visearch.uploadsearch({
-    im_url: "https://cdn-images.article.com/products/SKU2128/2890x1500/image46788.jpg?fit=max&w=2600&q=60&fm=webp",
-  }, function(res) {
-      /* Collect related SKUs from Visenze API call. */
-      let SKUs = extractSKUs(res.result);
-
-      /* Get product information from ElastiGraph. */
-      getElastiInformation(SKUs)
-          .then(function (parsedBody){
-            response.send(extractProductData(parsedBody));
-          });
-
-  }, function(err){
-      response.send("GET error")
-  });
-});
+// router.get('/image-search', function(req, response, next) {
+//   visearch.uploadsearch({
+//     im_url: "https://cdn-images.article.com/products/SKU2128/2890x1500/image46788.jpg?fit=max&w=2600&q=60&fm=webp",
+//   }, function(res) {
+//       /* Collect related SKUs from Visenze API call. */
+//       let SKUs = extractSKUs(res.result);
+//
+//       /* Get product information from ElastiGraph. */
+//       getElastiInformation(SKUs)
+//           .then(function (parsedBody){
+//             response.send(extractProductData(parsedBody));
+//           });
+//
+//   }, function(err){
+//       response.send("GET error")
+//   });
+// });
 
 function extractSKUs(list) {
   let SKUs = [];
@@ -80,23 +85,26 @@ function extractProductData(productData) {
 }
 
 /* Search for related products given an image. */
-router.post('/image-search', function(request, response, next) {
-  let image = req.body.image;
-  visearch.uploadsearch({
-      image: image,
-      fl: ["im_url","price"]
-  }, function(res) {
+router.post('/image-search', upload.single('photo'), function(request, response, next) {
+    let image
+    visearch.uploadsearch({
+        im_url: "https://cdn-images.article.com/products/SKU2128/2890x1500/image46788.jpg?fit=max&w=2600&q=60&fm=webp",
+        // fl: ["im_url","price"]
+    }, function(res) {
       /* Collect related SKUs from Visenze API call. */
       let SKUs = extractSKUs(res.result);
-
+      console.log(SKUs);
       /* Get product information from ElastiGraph. */
+      if (SKUs === undefined) {
+          response.send(500, "SKUs are undefined")
+      }
       getElastiInformation(SKUs)
           .then(function (parsedBody){
             response.send(extractProductData(parsedBody));
           });
-  }, function(err){
-      response.send("POST error")
-  });
+    }, function(err){
+        response.send("POST error")
+    });
 });
 
 module.exports = router;
